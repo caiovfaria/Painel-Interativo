@@ -1,0 +1,542 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Alagamento da Rua 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: painel de controle de drenagem — faixa de 4 respostas no topo, gráfico grande + controles, abaixo as etapas do cálculo */
+:root{
+  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#F5F8FA; --line:#D6DEE5;
+  --ink:#0E1A23; --muted:#56687A;
+  --water:#1864C9; --water-fill:rgba(24,100,201,.16); --water-soft:rgba(24,100,201,.08);
+  --accent:#D9580B; --accent-soft:rgba(217,88,11,.12);
+  --ok:#1E7A4C; --ok-soft:rgba(30,122,76,.12);
+  --warn:#A86A00; --warn-soft:rgba(168,106,0,.13);
+  --crit:#C2322A; --crit-soft:rgba(194,50,42,.12);
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1217; --surface:#141C23; --surface-2:#19232B; --line:#26333E;
+  --ink:#E6EDF2; --muted:#8C9DAB;
+  --water:#5AA8FF; --water-fill:rgba(90,168,255,.20); --water-soft:rgba(90,168,255,.09);
+  --accent:#FF8A3D; --accent-soft:rgba(255,138,61,.14);
+  --ok:#4FC688; --ok-soft:rgba(79,198,136,.13);
+  --warn:#F2B544; --warn-soft:rgba(242,181,68,.13);
+  --crit:#FF6B5E; --crit-soft:rgba(255,107,94,.14);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1217; --surface:#141C23; --surface-2:#19232B; --line:#26333E;
+  --ink:#E6EDF2; --muted:#8C9DAB;
+  --water:#5AA8FF; --water-fill:rgba(90,168,255,.20); --water-soft:rgba(90,168,255,.09);
+  --accent:#FF8A3D; --accent-soft:rgba(255,138,61,.14);
+  --ok:#4FC688; --ok-soft:rgba(79,198,136,.13);
+  --warn:#F2B544; --warn-soft:rgba(242,181,68,.13);
+  --crit:#FF6B5E; --crit-soft:rgba(255,107,94,.14);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 40px;display:flex;flex-direction:column;gap:22px}
+@media (max-width:520px){.wrap{padding-inline:16px;padding-block:18px 32px}}
+
+/* header */
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.eyebrow{font:600 11.5px/1 var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font:800 clamp(26px,4vw,38px)/1.05 var(--f-display);letter-spacing:-.01em;margin:8px 0 6px;text-wrap:balance}
+.lede{color:var(--muted);margin:0;max-width:62ch}
+.tag{display:inline-flex;align-items:center;gap:8px;font:500 12.5px/1 var(--f-body);color:var(--muted);border:1px dashed var(--line);padding:8px 12px;border-radius:999px;white-space:nowrap}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+/* answer strip */
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media (max-width:900px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:440px){.strip{grid-template-columns:1fr}}
+.tile{background:var(--surface);padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tile .k{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tile .tool{font:700 11.5px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tile .q{font-size:13px;color:var(--muted)}
+.tile .v{font:700 30px/1.1 var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tile .v small{font:500 14px var(--f-body);color:var(--muted);margin-left:4px}
+.tile .sub{font-size:13px;color:var(--muted);min-height:1.5em}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px/1 var(--f-body);padding:5px 9px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.up{color:var(--crit);background:var(--crit-soft)}
+.pill.flat{color:var(--warn);background:var(--warn-soft)}
+.pill.down{color:var(--ok);background:var(--ok-soft)}
+.pill.crit{color:var(--crit);background:var(--crit-soft)}
+.pill.warn{color:var(--warn);background:var(--warn-soft)}
+.pill.ok{color:var(--ok);background:var(--ok-soft)}
+
+/* main grid */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
+.panel-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;padding:16px 18px 0}
+.panel-h h2{font:700 16px/1.2 var(--f-display);margin:0}
+.formula{font:600 15px/1 var(--f-mono);color:var(--water);background:var(--water-soft);padding:7px 10px;border-radius:8px;white-space:nowrap}
+.chart-box{padding:6px 10px 4px}
+svg#chart{width:100%;height:auto;display:block;touch-action:none;cursor:crosshair;user-select:none}
+svg text{font-family:var(--f-body)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;padding:0 18px 16px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:16px;height:10px;border-radius:2px;display:inline-block}
+.hint{font-size:12.5px;color:var(--muted)}
+
+/* controls */
+.controls{padding:16px 18px 18px;display:flex;flex-direction:column;gap:18px}
+.group{display:flex;flex-direction:column;gap:12px}
+.group-t{font:700 11.5px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.ctl label{font-size:13.5px}
+.ctl label em{font:600 13px var(--f-mono);font-style:normal;color:var(--muted);margin-right:4px}
+.ctl output{font:600 13.5px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink);min-width:5ch;text-align:right}
+.ctl input{grid-column:1/-1}
+input[type=range]{width:100%;accent-color:var(--water);height:22px;margin:0}
+input[type=range].acc{accent-color:var(--accent)}
+.sep{height:1px;background:var(--line)}
+button{font:600 13px var(--f-body);color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--water)}
+button:focus-visible,input:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.btn-sm{padding:5px 9px;font-size:12px}
+
+/* steps */
+.tabs{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line);overflow-x:auto}
+[role=tab]{font:600 13.5px var(--f-body);background:none;border:0;border-radius:8px;padding:9px 14px;color:var(--muted);white-space:nowrap;display:inline-flex;gap:8px;align-items:center}
+[role=tab] .n{font:600 11px var(--f-mono);color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 5px}
+[role=tab][aria-selected=true]{background:var(--water-soft);color:var(--ink)}
+[role=tab][aria-selected=true] .n{border-color:var(--water);color:var(--water)}
+[role=tab]:hover{color:var(--ink)}
+.tabpanel{padding:20px 22px 24px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px 32px}
+@media (max-width:760px){.tabpanel{grid-template-columns:1fr;padding:18px 16px 20px}}
+.tabpanel h3{font:700 19px/1.25 var(--f-display);margin:0 0 10px;text-wrap:balance}
+.tabpanel p{margin:0 0 10px;max-width:62ch}
+.tabpanel ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.lbl{font:700 11.5px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:block}
+.calc{font:400 14.5px/1.9 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-variant-numeric:tabular-nums}
+.calc .r{white-space:nowrap}
+.calc .res{color:var(--water);font-weight:600}
+.calc sub,.calc sup{font-size:.7em}
+.note{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px;margin-top:12px}
+.callout{border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.callout.crit{background:var(--crit-soft)} .callout.warn{background:var(--warn-soft)} .callout.ok{background:var(--ok-soft)}
+.callout strong{display:block;margin-bottom:4px}
+.timeline{display:flex;flex-direction:column;gap:0;margin-top:4px}
+.ev{display:grid;grid-template-columns:62px 1fr;gap:12px;padding:8px 0;border-top:1px dashed var(--line)}
+.ev:first-child{border-top:0}
+.ev .t{font:600 13px var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+
+footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;font-size:12.5px;color:var(--muted);padding-top:4px}
+@media (prefers-reduced-motion:no-preference){.tile .v,.calc .res{transition:color .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">FIAP · Cálculo em Ação · Peneiras ON</div>
+      <h1>O alagamento de uma rua</h1>
+      <p class="lede">Como a função, a derivada e a integral podem apoiar decisões durante uma tempestade. Mexa no tempo, nos coeficientes do modelo e no limite de alerta para ver cada resposta mudar.</p>
+    </div>
+    <span class="tag">Modelo hipotético · valores acadêmicos</span>
+  </header>
+
+  <!-- four answers -->
+  <section class="strip" aria-label="Respostas do modelo">
+    <div class="tile">
+      <div class="k"><span class="tool">Função</span><span class="q">Qual é a altura?</span></div>
+      <div class="v" id="kH">29<small>cm</small></div>
+      <div class="sub" id="kHsub">h(2) no instante escolhido</div>
+    </div>
+    <div class="tile">
+      <div class="k"><span class="tool">Derivada</span><span class="q">Como está mudando?</span></div>
+      <div class="v" id="kD">8<small>cm/h</small></div>
+      <div class="sub" id="kDsub"></div>
+    </div>
+    <div class="tile">
+      <div class="k"><span class="tool">Integral</span><span class="q">Área acumulada?</span></div>
+      <div class="v" id="kI">105,33<small>cm·h</small></div>
+      <div class="sub" id="kIsub">de 0 a 4 h</div>
+    </div>
+    <div class="tile">
+      <div class="k"><span class="tool">Decisão</span><span class="q">O que fazer?</span></div>
+      <div class="v" id="kA" style="font-size:22px;line-height:1.35">Agir antes de 2,1 h</div>
+      <div class="sub" id="kAsub"></div>
+    </div>
+  </section>
+
+  <section class="main">
+    <div class="panel">
+      <div class="panel-h">
+        <h2>Altura estimada da água (0 a 8 horas)</h2>
+        <span class="formula" id="fx">h(t) = −2t² + 16t + 5</span>
+      </div>
+      <div class="chart-box">
+        <svg id="chart" viewBox="0 0 720 380" role="img" aria-label="Gráfico da altura da água ao longo do tempo"></svg>
+      </div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--water)"></i>h(t), altura</span>
+        <span><i class="sw" style="background:var(--water-fill)"></i>área da integral</span>
+        <span><i class="sw" style="background:var(--accent)"></i>tangente h′(t) e instante</span>
+        <span><i class="sw" style="background:var(--crit)"></i>limite de alerta</span>
+        <span class="hint">Clique ou arraste no gráfico para mudar o instante.</span>
+      </div>
+    </div>
+
+    <aside class="panel controls" aria-label="Controles">
+      <div class="group">
+        <div class="group-t">Instante</div>
+        <div class="ctl">
+          <label for="t">Tempo <em>t</em></label><output id="tOut">2,0 h</output>
+          <input type="range" id="t" class="acc" min="0" max="8" step="0.1" value="2">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="group">
+        <div class="group-t">Intervalo da integral</div>
+        <div class="ctl">
+          <label for="i0">Início</label><output id="i0Out">0 h</output>
+          <input type="range" id="i0" min="0" max="8" step="0.5" value="0">
+        </div>
+        <div class="ctl">
+          <label for="i1">Fim</label><output id="i1Out">4 h</output>
+          <input type="range" id="i1" min="0" max="8" step="0.5" value="4">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="group">
+        <div class="group-t">Limite de alerta</div>
+        <div class="ctl">
+          <label for="lim">Altura crítica</label><output id="limOut">30 cm</output>
+          <input type="range" id="lim" min="5" max="60" step="1" value="30">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="group">
+        <div class="group-t">Coeficientes <button class="btn-sm" id="reset" type="button">Voltar ao modelo do grupo</button></div>
+        <div class="ctl">
+          <label for="a"><em>a</em>concavidade</label><output id="aOut">−2</output>
+          <input type="range" id="a" min="-4" max="-0.5" step="0.25" value="-2">
+        </div>
+        <div class="ctl">
+          <label for="b"><em>b</em>taxa inicial de subida</label><output id="bOut">16</output>
+          <input type="range" id="b" min="4" max="28" step="1" value="16">
+        </div>
+        <div class="ctl">
+          <label for="c"><em>c</em>altura inicial</label><output id="cOut">5</output>
+          <input type="range" id="c" min="0" max="20" step="1" value="5">
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="panel" aria-label="Etapas do cálculo">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-cenario" aria-controls="panel" aria-selected="false"><span class="n">1</span>Fenômeno</button>
+      <button role="tab" id="tab-funcao" aria-controls="panel" aria-selected="true"><span class="n">2</span>Função</button>
+      <button role="tab" id="tab-derivada" aria-controls="panel" aria-selected="false"><span class="n">3</span>Derivada</button>
+      <button role="tab" id="tab-integral" aria-controls="panel" aria-selected="false"><span class="n">4</span>Integral</button>
+      <button role="tab" id="tab-decisao" aria-controls="panel" aria-selected="false"><span class="n">5</span>Decisão</button>
+    </div>
+    <div class="tabpanel" id="panel" role="tabpanel"></div>
+  </section>
+
+  <footer>
+    <span>Grupo Peneiras ON: Caio Viana, Anna Júlia, João Thees, Arthur Amoreli e Clara Diel</span>
+    <span>FIAP · Engenharia de Software · Diferentiated Problem Solving</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+const DEF={a:-2,b:16,c:5,t:2,i0:0,i1:4,lim:30};
+const S={...DEF};
+const T_MAX=8;
+const $=id=>document.getElementById(id);
+
+const fmt=(x,d=1)=>{ if(Math.abs(x)<1e-9) x=0;
+  return x.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:d}).replace('-','−'); };
+const fmtF=(x,d)=>{ if(Math.abs(x)<1e-9) x=0; return x.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}).replace('-','−'); };
+const signed=(x,d=2)=> (x<0?' − ':' + ')+fmt(Math.abs(x),d);
+const par=x=> x<0?'('+fmt(x,2)+')':fmt(x,2);
+
+const h=t=>S.a*t*t+S.b*t+S.c;
+const dh=t=>2*S.a*t+S.b;
+const F=t=>S.a/3*t**3+S.b/2*t*t+S.c*t;
+
+function coefStr(x){ // leading coefficient
+  if(x===-1) return '−'; if(x===1) return '';
+  return fmt(x,2);
+}
+function polyStr(){ return `h(t) = ${coefStr(S.a)}t²${signed(S.b)}t${signed(S.c)}`; }
+
+function peak(){
+  let tp=-S.b/(2*S.a), inside=true;
+  if(tp>T_MAX){tp=T_MAX;inside=false} if(tp<0){tp=0;inside=false}
+  return {t:tp,h:h(tp),inside};
+}
+function crossings(L){ // where h(t)=L, inside [0,8]
+  const A=S.a,B=S.b,C=S.c-L, D=B*B-4*A*C;
+  if(D<0) return null;
+  const r1=(-B+Math.sqrt(D))/(2*A), r2=(-B-Math.sqrt(D))/(2*A);
+  let lo=Math.min(r1,r2), hi=Math.max(r1,r2);
+  const s=Math.max(0,lo), e=Math.min(T_MAX,hi);
+  if(s>=e) return null;
+  return {start:s,end:e,startsAbove:lo<0,endsAbove:hi>T_MAX};
+}
+function integral(){
+  let t0=Math.min(S.i0,S.i1), t1=Math.max(S.i0,S.i1);
+  let neg=false;
+  for(let k=0;k<=200;k++){ if(h(t0+(t1-t0)*k/200)<0){neg=true;break} }
+  let v;
+  if(!neg) v=F(t1)-F(t0);
+  else { const n=800, dt=(t1-t0)/n; v=0; for(let k=0;k<n;k++){ const x=t0+(k+.5)*dt; v+=Math.max(0,h(x))*dt; } }
+  return {t0,t1,v,neg};
+}
+
+/* ---------- chart ---------- */
+const svg=$('chart'), NS='http://www.w3.org/2000/svg';
+let W=720,H=380;const M={l:52,r:22,t:22,b:44};
+const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+function niceMax(v){ const steps=[10,20,30,40,50,60,80,100,120,150,200]; for(const s of steps) if(v<=s) return s; return Math.ceil(v/50)*50; }
+let sx,sy,yMax;
+function draw(){
+  const cw=svg.parentNode.clientWidth||720; if(cw<560){W=460;H=340}else{W=720;H=380}
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML='';
+  const pk=peak();
+  let maxH=0; for(let k=0;k<=160;k++) maxH=Math.max(maxH,h(k*T_MAX/160));
+  yMax=niceMax(Math.max(maxH,S.lim)*1.08);
+  sx=t=>M.l+t/T_MAX*(W-M.l-M.r);
+  sy=v=>H-M.b-Math.max(0,Math.min(v,yMax))/yMax*(H-M.t-M.b);
+  const yStep=yMax<=40?10:yMax<=80?20:yMax<=150?30:50;
+  // grid
+  for(let v=0;v<=yMax+1e-9;v+=yStep){
+    el('line',{x1:M.l,x2:W-M.r,y1:sy(v),y2:sy(v),stroke:'var(--line)','stroke-width':1});
+    el('text',{x:M.l-10,y:sy(v)+4,'text-anchor':'end','font-size':12,fill:'var(--muted)'}).textContent=fmt(v);
+  }
+  for(let t=0;t<=T_MAX;t++){
+    el('text',{x:sx(t),y:H-M.b+20,'text-anchor':'middle','font-size':12,fill:'var(--muted)'}).textContent=t;
+  }
+  el('text',{x:W-M.r,y:H-6,'text-anchor':'end','font-size':12,fill:'var(--muted)'}).textContent='tempo (h)';
+  el('text',{x:M.l-10,y:M.t-8,'text-anchor':'end','font-size':12,fill:'var(--muted)'}).textContent='cm';
+  // integral area
+  const I=integral();
+  let d=`M${sx(I.t0)},${sy(0)}`;
+  for(let k=0;k<=80;k++){const t=I.t0+(I.t1-I.t0)*k/80; d+=` L${sx(t)},${sy(h(t))}`}
+  d+=` L${sx(I.t1)},${sy(0)} Z`;
+  el('path',{d,fill:'var(--water-fill)',stroke:'none'});
+  if(I.t1>I.t0){
+    const mid=(I.t0+I.t1)/2;
+    el('text',{x:sx(mid),y:sy(0)-10,'text-anchor':'middle','font-size':12.5,'font-weight':600,fill:'var(--water)'}).textContent='∫ = '+fmtF(I.v,2)+' cm·h';
+  }
+  // threshold
+  el('line',{x1:M.l,x2:W-M.r,y1:sy(S.lim),y2:sy(S.lim),stroke:'var(--crit)','stroke-width':1.5,'stroke-dasharray':'6 5'});
+  el('text',{x:W-M.r-4,y:sy(S.lim)-7,'text-anchor':'end','font-size':12,'font-weight':600,fill:'var(--crit)'}).textContent='alerta '+fmt(S.lim)+' cm';
+  const cr=crossings(S.lim);
+  if(cr){
+    el('line',{x1:sx(cr.start),x2:sx(cr.end),y1:sy(S.lim),y2:sy(S.lim),stroke:'var(--crit)','stroke-width':4,'stroke-linecap':'round'});
+  }
+  // curve
+  let p=''; for(let k=0;k<=160;k++){const t=k*T_MAX/160; p+=(k?' L':'M')+sx(t)+','+sy(h(t))}
+  el('path',{d:p,fill:'none',stroke:'var(--water)','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'});
+  // peak
+  el('circle',{cx:sx(pk.t),cy:sy(pk.h),r:5,fill:'var(--surface)',stroke:'var(--water)','stroke-width':2.5});
+  const pkLabelRight=pk.t<T_MAX-1.5;
+  el('text',{x:sx(pk.t)+(pkLabelRight?10:-10),y:sy(pk.h)-10,'text-anchor':pkLabelRight?'start':'end','font-size':12.5,'font-weight':600,fill:'var(--water)'}).textContent=(pk.inside?'Pico: ':'Máx. na janela: ')+fmt(pk.h)+' cm em '+fmt(pk.t,2)+' h';
+  // current instant + tangent
+  const t=S.t, ht=h(t), m=dh(t);
+  el('line',{x1:sx(t),x2:sx(t),y1:sy(0),y2:sy(ht),stroke:'var(--accent)','stroke-width':1.25,'stroke-dasharray':'3 4'});
+  const span=1.1, ta=Math.max(0,t-span), tb=Math.min(T_MAX,t+span);
+  el('line',{x1:sx(ta),y1:sy(ht+m*(ta-t)),x2:sx(tb),y2:sy(ht+m*(tb-t)),stroke:'var(--accent)','stroke-width':2.25,'stroke-linecap':'round'});
+  el('circle',{cx:sx(t),cy:sy(ht),r:6.5,fill:'var(--accent)',stroke:'var(--surface)','stroke-width':2.5});
+  const right=t<(W<600?4.6:5.6);
+  const lx=sx(t)+(right?12:-12), ly=Math.min(sy(ht)+26,H-M.b-26);
+  const lbl=el('text',{x:lx,y:ly,'text-anchor':right?'start':'end','font-size':12.5,fill:'var(--ink)'});
+  lbl.innerHTML=`<tspan font-weight="600">h(${fmt(t)}) = ${fmt(Math.max(0,ht))} cm</tspan><tspan x="${lx}" dy="16" fill="var(--accent)">h′ = ${fmt(m)} cm/h</tspan>`;
+}
+
+/* ---------- tiles ---------- */
+function tiles(){
+  const t=S.t, ht=h(t), m=dh(t), pk=peak(), I=integral(), cr=crossings(S.lim);
+  $('kH').innerHTML=fmt(Math.max(0,ht))+'<small>cm</small>';
+  $('kHsub').textContent=`h(${fmt(t)}) no instante escolhido`+(ht<0?' (rua seca)':'');
+  $('kD').innerHTML=(m>0?'+':'')+fmt(m)+'<small>cm/h</small>';
+  const state=Math.abs(m)<0.25?['flat','no pico']:m>0?['up','subindo']:['down','descendo'];
+  $('kDsub').innerHTML=`<span class="pill ${state[0]}">${state[1]}</span> &nbsp;${pk.inside?'pico em '+fmt(pk.t,2)+' h':'sem pico na janela'}`;
+  $('kI').innerHTML=fmtF(I.v,2)+'<small>cm·h</small>';
+  $('kIsub').textContent=`de ${fmt(I.t0)} a ${fmt(I.t1)} h · média ${I.t1>I.t0?fmt(I.v/(I.t1-I.t0)):'—'} cm`;
+  const dec=decision();
+  $('kA').textContent=dec.short;
+  $('kAsub').innerHTML=`<span class="pill ${dec.level}">${dec.label}</span>`;
+}
+
+function decision(){
+  const cr=crossings(S.lim), pk=peak();
+  if(!cr) return {level:'ok',label:'monitorar',short:'Manter monitoramento',cr,pk};
+  if(cr.startsAbove) return {level:'crit',label:'acima do limite',short:'Agir já (t = 0)',cr,pk};
+  return {level:S.t>=cr.start?'crit':'warn',label:S.t>=cr.start&&S.t<=cr.end?'acima do limite':S.t>cr.end?'limite já passou':'alerta à frente',short:'Agir antes de '+fmt(cr.start,1)+' h',cr,pk};
+}
+
+/* ---------- steps ---------- */
+const TABS=['cenario','funcao','derivada','integral','decisao'];
+let tab='funcao';
+try{ const hsh=location.hash.slice(1); if(TABS.includes(hsh)) tab=hsh; else { const s=localStorage.getItem('alag-tab'); if(TABS.includes(s)) tab=s; } }catch(e){}
+
+function panelHTML(){
+  const a=S.a,b=S.b,c=S.c,t=S.t, pk=peak(), I=integral();
+  if(tab==='cenario') return `
+    <div><span class="lbl">Cenário</span>
+      <h3>A água se acumula na rua</h3>
+      <ul>
+        <li>Uma tempestade provoca acúmulo de água em uma rua.</li>
+        <li>No início, a água sobe porque a chuva supera a capacidade de drenagem.</li>
+        <li>Com a redução da chuva e o escoamento, o nível pode começar a cair.</li>
+      </ul>
+    </div>
+    <div><span class="lbl">Objetivo</span>
+      <p>Estimar o nível da água ao longo do tempo e identificar quando ocorre o pico do alagamento.</p>
+      <div class="calc"><div class="r">${polyStr()}</div><div class="r" style="color:var(--muted)">t = tempo (h) · h(t) = altura da água (cm)</div></div>
+      <p class="note">${coefStr(a)==='−'?'−1':fmt(a,2)}: concavidade para baixo · ${fmt(b)}: taxa inicial de subida · ${fmt(c)}: altura inicial (cm). A função é um modelo simplificado, não uma previsão real de enchente.</p>
+    </div>`;
+  if(tab==='funcao'){
+    const t2=t*t;
+    return `
+    <div><span class="lbl">Pergunta</span>
+      <h3>Qual será a altura da água após ${fmt(t)} ${t===1?'hora':'horas'}?</h3>
+      <div class="calc">
+        <div class="r">h(${fmt(t)}) = ${fmt(a,2)}(${fmt(t)})²${signed(b)}(${fmt(t)})${signed(c)}</div>
+        <div class="r">h(${fmt(t)}) = ${fmt(a*t2,2)}${signed(b*t)}${signed(c)}</div>
+        <div class="r res">h(${fmt(t)}) = ${fmt(h(t),2)} cm</div>
+      </div>
+    </div>
+    <div><span class="lbl">Interpretação</span>
+      <p>O modelo estima <strong>${fmt(Math.max(0,h(t)))} cm</strong> de água após ${fmt(t)} h.${h(t)<0?' O valor negativo indica que, no modelo, a rua já secou.':''}</p>
+      <p class="note">A função fornece o valor da altura para um instante escolhido. Ela não informa sozinha se o nível está subindo ou descendo. Para isso, veja a derivada.</p>
+    </div>`;
+  }
+  if(tab==='derivada'){
+    const m=dh(t), tp=-b/(2*a);
+    return `
+    <div><span class="lbl">Derivando a função</span>
+      <h3>Quando ocorre o nível máximo?</h3>
+      <div class="calc">
+        <div class="r">${polyStr()}</div>
+        <div class="r">h′(t) = ${fmt(2*a,2)}t${signed(b)}</div>
+        <div class="r" style="color:var(--muted)">no ponto máximo, h′(t) = 0</div>
+        <div class="r">${fmt(2*a,2)}t${signed(b)} = 0 → t = ${fmt(tp,2)} h</div>
+        <div class="r res">h(${fmt(tp,2)}) = ${fmt(h(tp),2)} cm</div>
+      </div>
+      ${tp>T_MAX?`<p class="note">O pico teórico cai depois de 8 h, fora da janela observada. Nela, a água só sobe e o máximo é ${fmt(pk.h)} cm em 8 h.</p>`:''}
+    </div>
+    <div><span class="lbl">O que isso significa?</span>
+      <ul>
+        <li>Antes de ${fmt(Math.min(tp,T_MAX),2)} h: h′ &gt; 0, a água sobe.</li>
+        <li>Em ${fmt(tp,2)} h: h′ = 0, máximo do modelo.</li>
+        <li>Depois: h′ &lt; 0, a água começa a baixar.</li>
+      </ul>
+      <div class="calc" style="margin-top:14px"><div class="r">Agora: h′(${fmt(t)}) = ${fmt(2*a,2)}·${fmt(t)}${signed(b)} = <span class="res">${fmt(m,2)} cm/h</span></div></div>
+      <p class="note">A reta laranja no gráfico é a tangente em t = ${fmt(t)} h. Sua inclinação é a derivada.</p>
+    </div>`;
+  }
+  if(tab==='integral'){
+    const A3 = Number.isInteger(a)&&a%3!==0 ? `${a<0?'−':''}(${Math.abs(a)}/3)` : fmt(a/3,3);
+    return `
+    <div><span class="lbl">Integral entre ${fmt(I.t0)} e ${fmt(I.t1)} horas</span>
+      <h3>Quanto se acumulou ao longo do tempo?</h3>
+      <div class="calc">
+        <div class="r">∫<sub>${fmt(I.t0)}</sub><sup>${fmt(I.t1)}</sup> (${fmt(a,2)}t²${signed(b)}t${signed(c)}) dt</div>
+        <div class="r">= [ ${A3}t³${signed(b/2)}t²${signed(c)}t ]<sub>${fmt(I.t0)}</sub><sup>${fmt(I.t1)}</sup></div>
+        <div class="r">= ${fmtF(F(I.t1),2)} − ${par(+F(I.t0).toFixed(2))}</div>
+        <div class="r res">≈ ${fmtF(I.neg?I.v:F(I.t1)-F(I.t0),2)} cm·h</div>
+      </div>
+      ${I.neg?`<p class="note">Parte do intervalo tem h(t) &lt; 0 (rua seca). O valor em destaque considera altura zero nesses trechos, por isso difere da conta exata acima.</p>`:''}
+    </div>
+    <div><span class="lbl">Interpretação</span>
+      <p>A integral calcula a área sob a curva da altura entre ${fmt(I.t0)} e ${fmt(I.t1)} horas: a área azul no gráfico.</p>
+      <p>Dividindo pelo intervalo, a altura média no período é <strong>${I.t1>I.t0?fmt(I.v/(I.t1-I.t0),2)+' cm':'—'}</strong>.</p>
+      <p class="note">A unidade é cm·h. Isso não é o volume de água: para volume, seria preciso conhecer a área alagada.</p>
+    </div>`;
+  }
+  // decisão
+  const dec=decision(), cr=dec.cr;
+  let call;
+  if(!cr) call=`<div class="callout ok"><strong>Abaixo do limite</strong>O pico estimado de ${fmt(pk.h)} cm não alcança ${fmt(S.lim)} cm. Manter o monitoramento e os bueiros desobstruídos.</div>`;
+  else if(cr.startsAbove) call=`<div class="callout crit"><strong>Já começa acima do limite</strong>A rua já está com mais de ${fmt(S.lim)} cm em t = 0 e fica acima até ${cr.endsAbove?'o fim da janela':fmt(cr.end,1)+' h'}. Acionar bombeamento imediatamente.</div>`;
+  else call=`<div class="callout ${dec.level}"><strong>Nível crítico entre ${fmt(cr.start,1)} h e ${cr.endsAbove?'8 h ou mais':fmt(cr.end,1)+' h'}</strong>A água passa de ${fmt(S.lim)} cm por ${fmt(cr.end-cr.start,1)} h${cr.endsAbove?' ou mais':''}. A janela para agir termina em ${fmt(cr.start,1)} h.</div>`;
+  const ev=[];
+  ev.push([0,`Altura inicial: ${fmt(Math.max(0,h(0)))} cm.`]);
+  if(cr&&!cr.startsAbove&&cr.start>0.5) ev.push([Math.max(0,cr.start-1),'Inspecionar bueiros e posicionar bombas.']);
+  ev.push([S.t,`Instante escolhido: ${fmt(Math.max(0,h(S.t)))} cm, ${dh(S.t)>0?'subindo':'descendo'}.`]);
+  if(cr&&!cr.startsAbove) ev.push([cr.start,`Água atinge ${fmt(S.lim)} cm.`]);
+  ev.push([pk.t,`${pk.inside?'Pico':'Máximo na janela'}: ${fmt(pk.h)} cm.`]);
+  if(cr&&!cr.endsAbove) ev.push([cr.end,`Nível volta abaixo de ${fmt(S.lim)} cm.`]);
+  ev.sort((x,y)=>x[0]-y[0]);
+  return `
+    <div><span class="lbl">Decisão possível</span>
+      <h3>Como a cidade pode agir?</h3>
+      ${call}
+      <ul>
+        <li>Inspecionar bueiros antes do pico previsto.</li>
+        <li>Avaliar o bombeamento.</li>
+        <li>Reforçar o monitoramento ${cr&&!cr.startsAbove?'a partir de '+fmt(Math.max(0,cr.start-1),1)+' h':'durante toda a chuva'}.</li>
+      </ul>
+      <p class="note">Em uma situação real, a decisão exigiria medições atuais e critérios de segurança. A matemática não substitui as medições, mas ajuda a interpretar o cenário e justificar uma ação.</p>
+    </div>
+    <div><span class="lbl">Linha do tempo do modelo</span>
+      <div class="timeline">${ev.map(e=>`<div class="ev"><span class="t">${fmtF(e[0],1)} h</span><span>${e[1]}</span></div>`).join('')}</div>
+    </div>`;
+}
+function renderTabs(){
+  TABS.forEach(k=>{const b=$('tab-'+k); b.setAttribute('aria-selected',k===tab); b.tabIndex=k===tab?0:-1;});
+  $('panel').setAttribute('aria-labelledby','tab-'+tab);
+  $('panel').innerHTML=panelHTML();
+}
+TABS.forEach((k,i)=>{
+  const b=$('tab-'+k);
+  b.addEventListener('click',()=>{tab=k;try{localStorage.setItem('alag-tab',k)}catch(e){}renderTabs()});
+  b.addEventListener('keydown',e=>{
+    if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;
+    const n=TABS[(i+(e.key==='ArrowRight'?1:-1)+TABS.length)%TABS.length];
+    tab=n;renderTabs();$('tab-'+n).focus();
+  });
+});
+
+/* ---------- controls ---------- */
+function syncOutputs(){
+  $('tOut').textContent=fmtF(S.t,1)+' h';
+  $('i0Out').textContent=fmt(S.i0)+' h';
+  $('i1Out').textContent=fmt(S.i1)+' h';
+  $('limOut').textContent=fmt(S.lim)+' cm';
+  $('aOut').textContent=fmt(S.a,2);
+  $('bOut').textContent=fmt(S.b);
+  $('cOut').textContent=fmt(S.c);
+  $('fx').textContent=polyStr();
+}
+function update(){ syncOutputs(); draw(); tiles(); renderTabs(); }
+['t','i0','i1','lim','a','b','c'].forEach(k=>{
+  $(k).addEventListener('input',e=>{S[k]=parseFloat(e.target.value); update();});
+});
+$('reset').addEventListener('click',()=>{
+  ['a','b','c'].forEach(k=>{S[k]=DEF[k];$(k).value=DEF[k]}); update();
+});
+// chart scrubbing
+let drag=false;
+function scrub(e){
+  const r=svg.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*W;
+  let t=(x-M.l)/(W-M.l-M.r)*T_MAX;
+  t=Math.round(Math.max(0,Math.min(T_MAX,t))*10)/10;
+  if(t!==S.t){S.t=t;$('t').value=t;update();}
+}
+svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);scrub(e)});
+svg.addEventListener('pointermove',e=>{if(drag)scrub(e)});
+svg.addEventListener('pointerup',()=>drag=false);
+svg.addEventListener('pointercancel',()=>drag=false);
+
+update();
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,120)});
+})();
+</script>
+
+</body></html>
